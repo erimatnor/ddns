@@ -10,9 +10,14 @@ AM_SILENT_RULES([yes])
 
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([src/config.h])
 AM_PROG_AR
 LT_INIT
+
+# Set some sane default compiler flags
+CFLAGS="-Wall"
+CXXFLAGS="-Wall"
+EXTRA_DEFINES=
 
 platform_result=no
 
@@ -52,7 +57,7 @@ AM_CONDITIONAL([DEBUG], [test x$debug = xyes])
 
 if test x$debug = xyes
 then      
-     EXTRA_DEFINES="${EXTRA_DEFINES} -DENABLE_DEBUG"
+     CPPFLAGS="$CPPFLAGS -DENABLE_DEBUG"
      CFLAGS="$CFLAGS -g -O0 -fno-inline"  
      CXXFLAGS="$CXXFLAGS -g -O0 -fno-inline"
 else
@@ -98,8 +103,21 @@ AC_SUBST([CSOCKET_INCLUDES])
 AC_SUBST([CSOCKET_LIBS])
 AC_SUBST([CSOCKET_LDFLAGS])
 
+AX_CHECK_OPENSSL([have_openssl=yes], [have_openssl=no])
+AM_CONDITIONAL([HAVE_OPENSSL], [test x$have_openssl = xyes])
+
+if test x$have_openssl = xyes
+then
+        AC_DEFINE([HAVE_OPENSSL], [1], [OpenSSL])
+else
+        AC_DEFINE([HAVE_OPENSSL], [0], [OpenSSL])
+fi
+
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
 ])
 AC_OUTPUT
+
+echo
+echo "Enable debug output.......................$debug"

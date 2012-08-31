@@ -21,13 +21,14 @@
 
 enum ddns_proto {
     DDNS_PROTO_DYNDNS2,
+    DDNS_PROTO_FREEDNS,
 };
 
 enum ddns_socket_type {
-    DDNS_INET_SOCKET,
-    DDNS_INET6_SOCKET,
-    DDNS_SSL_SOCKET,
-    DDNS_SSL6_SOCKET,
+    DDNS_INET,
+    DDNS_INET6,
+    DDNS_SSL,
+    DDNS_SSL6,
 };
 
 struct ddns_proto_ops;
@@ -40,6 +41,7 @@ struct ddns {
     void *private;
     char *username;
     char *password;
+    const char *service;
 };
 
 struct ddns_proto_ops {
@@ -54,6 +56,7 @@ int ddns_connect(struct ddns *dd, const char *provider, const char *username, co
 int ddns_update(struct ddns *dd, const char *name, const char *addr);
 void ddns_close(struct ddns *dd);
 void ddns_destroy(struct ddns *dd);
+const char *ddns_proto_name(enum ddns_proto proto);
 /* void ddns_destroy(struct ddns *dd); */
 
 #endif /* __DDNS_H__ */

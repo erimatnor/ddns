@@ -19,19 +19,33 @@
 #include <string.h>
 #include <ddns/ddns.h>
 #include <csocket/csocket.h>
+#include "debug.h"
 
 extern struct ddns_proto_ops dyndns2_proto_ops;
+extern struct ddns_proto_ops freedns_proto_ops;
 
 static const struct ddns_proto_ops *protocols[] = {
     [DDNS_PROTO_DYNDNS2] = &dyndns2_proto_ops,
+    [DDNS_PROTO_FREEDNS] = &freedns_proto_ops,
 };
 
 static const struct socket_ops *socket_ops[] = {
-    [DDNS_INET_SOCKET] = &inet_stream_socket_ops,
-    [DDNS_INET6_SOCKET] = &inet6_stream_socket_ops,
-    [DDNS_SSL_SOCKET] = &ssl_socket_ops,
-    //[DDNS_SSL6_SOCKET] = &ssl6_socket_ops,
+    [DDNS_INET] = &inet_stream_socket_ops,
+    [DDNS_INET6] = &inet6_stream_socket_ops,
+    [DDNS_SSL] = &ssl_socket_ops,
+    //[DDNS_SSL6] = &ssl6_socket_ops,
 };
+
+static const char *proto_names[] = {
+    [DDNS_PROTO_DYNDNS2] = "dyndns2",
+    [DDNS_PROTO_FREEDNS] = "freedns",
+    NULL
+};
+
+const char *ddns_proto_name(enum ddns_proto proto)
+{
+    return proto_names[proto];
+}
 
 int ddns_init(struct ddns *dd, enum ddns_socket_type socktype, 
               enum ddns_proto protocol)
@@ -55,7 +69,8 @@ int ddns_init(struct ddns *dd, enum ddns_socket_type socktype,
     return 0;
 }
 
-int ddns_connect(struct ddns *dd, const char *provider, const char *username, const char *password)
+int ddns_connect(struct ddns *dd, const char *provider, 
+                 const char *username, const char *password)
 {
     char service[strlen(provider) + 6];
     
@@ -64,8 +79,8 @@ int ddns_connect(struct ddns *dd, const char *provider, const char *username, co
     
     strcpy(service, provider);
 
-    if (dd->socktype == DDNS_SSL_SOCKET ||
-        dd->socktype == DDNS_SSL6_SOCKET) {
+    if (dd->socktype == DDNS_SSL ||
+        dd->socktype == DDNS_SSL6) {
         strcpy(service + strlen(provider), ":443");
     } else {
         strcpy(service + strlen(provider), ":80");
@@ -101,6 +116,11 @@ int ddns_update(struct ddns *dd, const char *name, const char *addr)
     return dd->ops->update(dd, name, addr);
 }
 
+int ddns_query(struct ddns *dd, const char *name)
+{
+    return 0;
+}
+
 void ddns_close(struct ddns *dd)
 {
     socket_close(dd->sock);
@@ -108,5 +128,13 @@ void ddns_close(struct ddns *dd)
 
 void ddns_destroy(struct ddns *dd)
 {
+    socket_close(dd->sock);
+
+    if (dd->username)
+        free(dd->username);
+
+    if (dd->password)
+        free(dd->password);
+
     return dd->ops->destroy(dd);
 }
